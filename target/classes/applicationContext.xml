@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+         http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/aop 
+        http://www.springframework.org/schema/aop/spring-aop.xsd
+         http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx.xsd">
+        
+        <!-- 导入一个配置文件() -->
+        <import resource="./activiti.cfg.xml"/>
+        <import resource="./shiro-config.xml"/>
+        
+        <!-- 读取属性文件 -->
+        <context:property-placeholder location="classpath:jdbc.properties"/>
+        
+        <!-- 开启包扫描 -->
+        <context:component-scan base-package="com.qf.service"/>
+        
+        <!-- 3.创建数据源 -->
+		<bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" destroy-method="close">
+		<!-- 基本属性 url、user、password -->
+		<property name="url" value="${jdbc.url}" />
+		<property name="username" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+		<property name="driverClassName" value="${jdbc.driver}" />
+		
+		<!-- 配置初始化大小、最小、最大 -->
+		<property name="initialSize" value="${druid.initialSize}" />
+		<property name="minIdle" value="${druid.minIdle}" />
+		<property name="maxActive" value="${druid.maxActive}" />
+		
+		<!-- 配置获取连接等待超时的时间 -->
+		<property name="maxWait" value="${druid.maxWait}" />
+	</bean>
+   
+       <!-- spring和mybatis整合 -->
+       <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+       		<!-- 数据源 -->
+       		<property name="dataSource" ref="dataSource"/>
+       		
+       		<!-- mybatis核心配置文件 -->
+       		<property name="configLocation" value="classpath:mybatis-config.xml"/>
+       		
+       		<!-- mybatis的mapper文件 -->
+       		<property name="mapperLocations" value="classpath:com/qf/mapper/*.xml"/>
+       		
+       		<!-- 设置别名 -->
+       		<property name="typeAliasesPackage" value="com.qf.entity"/>
+       </bean>
+        
+        <!-- 4.事务管理器 -->
+		<bean id="tx" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+			<property name="dataSource" ref="dataSource"/>
+		</bean>
+		  
+		<!-- 5.事务策略 -->
+		<tx:advice id="txAdvices" transaction-manager="tx">
+			<tx:attributes>
+				<tx:method name="get*" isolation="DEFAULT" propagation="REQUIRED" read-only="true" />
+				<tx:method name="add*" isolation="DEFAULT" propagation="REQUIRED" read-only="false" />
+				<tx:method name="upate*" isolation="DEFAULT" propagation="REQUIRED" read-only="false" />
+				<tx:method name="delete*" isolation="DEFAULT" propagation="REQUIRED" read-only="false" />
+			</tx:attributes>
+		</tx:advice>
+		
+		<!-- 6.AOP的配置 -->
+		<aop:config>
+			<aop:advisor advice-ref="txAdvices" pointcut="execution(* com.qf.service.*.*(..))"/>
+		</aop:config>
+		
+		<!-- 自动创建Dao层的代理类,并且放到spring容器 -->
+		<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+			
+			<!-- Dao层接口的包名 -->
+			<property name="basePackage" value="com.qf.dao"/>
+			
+			<!-- 设置sqlSessionFactory名字 -->
+			<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+		</bean>
+</beans>

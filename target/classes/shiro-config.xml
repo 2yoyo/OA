@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+       http://www.springframework.org/schema/beans 
+       http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+
+	<!-- shiro的核心组件 -->
+	<bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+		<property name="sessionMode" value="native" />
+		<property name="realm" ref="userRealm" />
+		<property name="cacheManager" ref="cacheManager"/>
+	</bean>
+
+	<!-- 声明周期 -->
+	<bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor" />
+
+	<!-- shiroFilter名字和web.xml中配置的shiroFilter保持一直 -->
+	<bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+
+		<property name="securityManager" ref="securityManager" />
+		<property name="loginUrl" value="/toLogin" />
+		<property name="successUrl" value="/ok.jsp" />
+		<property name="unauthorizedUrl" value="/unauthorized.jsp" />
+		<property name="filterChainDefinitions">
+			<value>
+				/css/**= anon
+				/js/**= anon
+				/lib/**= anon
+				/images/**= anon
+				/skin/**= anon
+				/css/**= anon
+				/toLogin= anon
+				/login= anon
+				/logout= logout
+				/** = authc
+			</value>
+		</property>
+	</bean>
+
+	<bean id="userRealm" class="com.qf.realm.UserRealm">
+		<!-- 配置密码加密 -->
+		<property name="credentialsMatcher">
+			<bean class="org.apache.shiro.authc.credential.HashedCredentialsMatcher">
+				<!-- 加密的算法 -->
+				<property name="hashAlgorithmName" value="MD5"></property>
+				<!--加密次数 -->
+				<property name="hashIterations" value="1024"></property>
+			</bean>
+		</property>
+		
+		<!-- 启用缓存，默认false； -->
+		<property name="cachingEnabled" value="true" />
+
+		<!--启用身份验证缓存，即缓存AuthenticationInfo信息，默认false -->
+		<property name="authenticationCachingEnabled" value="true" />
+		
+		<!--缓存AuthenticationInfo信息的缓存名称 -->
+		<property name="authenticationCacheName" value="authenticationCache" />
+		
+		<!--启用授权缓存，即缓存AuthorizationInfo信息，默认false -->
+		<property name="authorizationCachingEnabled" value="true" />
+		
+		<!--缓存AuthorizationInfo信息的缓存名称 -->
+		<property name="authorizationCacheName" value="authorizationCache" />
+	</bean>
+	
+
+<!-- 缓存管理器 -->
+	<bean id="cacheManager" class="org.apache.shiro.cache.ehcache.EhCacheManager">
+		<property name="cacheManagerConfigFile" value="classpath:ehcache.xml" />
+	</bean>
+</beans>

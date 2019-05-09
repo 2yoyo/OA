@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.qf.dao.IAuthorizationMapper" >
+  
+  <insert id="roleToEmp">
+  	insert into t_role_emp(role_id,emp_id) values
+  	<foreach collection="empIds" item="empId" separator=",">
+  		(#{roleId},#{empId})
+  	</foreach>
+  </insert>
+  
+  
+  <select id="getMenuzTree" resultType="map">
+		SELECT
+			m.id as id,
+			m.menu_name as name,
+			m.menu_parentid as pId,
+			rm.menu_id as checked,
+			m.menu_type as menuType
+		FROM
+			t_menu m
+		LEFT JOIN t_role_menu rm ON (
+			m.id = rm.menu_id
+			AND rm.role_id = #{roleId}
+		)ORDER BY m.id
+  </select>
+  
+  <delete id="deleteAuthorization">
+		delete
+		from
+			t_role_emp
+		WHERE
+			emp_id = #{id}
+		and
+			role_id = #{roleId}
+  </delete>
+  
+  
+  <delete id="deleteMenu">
+		delete
+		from
+			t_role_menu
+		WHERE
+			menu_id = #{id}
+		and
+			role_id = #{roleId}
+  </delete>
+  
+  <delete id="remove">
+  	delete from t_role_menu where role_id = #{roleId}
+  </delete>
+  
+  <insert id="batchAdd">
+  	insert into t_role_menu(role_id,menu_id) values
+  		<foreach collection="ids" item="menuId" separator=",">
+  			(#{roleId},#{menuId})
+  		</foreach>
+  </insert>
+</mapper>
